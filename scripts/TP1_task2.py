@@ -1,14 +1,14 @@
 #!/usr/bin/env python
 import rospy
-from geometry_msgs.msg import Twist, PoseStamped
-from nav_msgs.msg import Odometry, Path
+from geometry_msgs.msg import PoseStamped
+from nav_msgs.msg import Path
 from rosgraph_msgs.msg import Clock
 from sensor_msgs.msg import LaserScan
 from math import cos, sin, atan2, sqrt
 import numpy as np
 
 from DifferentialRobot import *
-from RvizSender import *
+from RvizMarkerSender import *
 
 def set_simulation_params(P):
     rospy.set_param('/w', P[0])
@@ -22,36 +22,33 @@ def get_simulation_params():
     return [float(param) for param in [w,a,k]]
 
 class ControlNode():
-    def __init__(self, robot, curve, freq=10):
-        self.robot = robot
-        self.target_curve = curve
-        self.freq = float(freq)
-        self.robot_pose_marker = RvizSender('/robot_pose_marker','point', color=[1,0.5,0.5,0.5])
-        self.robot_cmd_marker = RvizSender('/robot_cmd_marker','vector', color=[1,0.8,0.8,0.8])
-        self.target_pose_marker = RvizSender('/target_pose_marker','point', color=[1,0,1,0])
-        self.P = get_simulation_params()
-        self.F = (0,0,0)
-        self.path = Path()
+    def __init__(self, freq=10):
         # Init node
         rospy.init_node('control_node')
         # Topics
-        self.publisher_cmd_vel = rospy.Publisher('/cmd_vel', Twist, queue_size=10)
         self.publisher_robot_path = rospy.Publisher('/robot_path', Path, queue_size=1)
-        rospy.Subscriber('/base_pose_ground_truth', Odometry, self.robot.callback_pose)
-        # rospy.Subscriber('/base_scan', LaserScan, self.robot.lidar.callback_scan)
         rospy.Subscriber('/clock', Clock, self.callback_time)
+        self.freq = float(freq)
         self.rate = rospy.Rate(self.freq)
-        # Pub blank cmd_vel data to start
+        # Robot and curve
+        self.robot = DifferentialRobot('/base_pose_ground_truth','/cmd_vel')
+        self.target_curve = lambda t, P : P[1]*cos(P[2]*P[0]*t)*np.array( [cos(P[0]*t), sin(P[0]*t), 0.0] )
+        # Rviz markers
+        self.robot_pose_marker = RvizMarkerSender('/robot_pose_marker','point', color=[1,0.5,0.5,0.5])
+        self.robot_cmd_marker = RvizMarkerSender('/robot_cmd_marker','vector', color=[1,0.8,0.8,0.8],id=1)
+        self.target_pose_marker = RvizMarkerSender('/target_pose_marker','point', color=[1,0,1,0],id=2)
+        # Initialize P,F,path
+        self.P = get_simulation_params()
         self.F = (0,0,0)
-        u = self.robot.calculate_control_input(self.F)
-        self.publisher_cmd_vel.publish(u)
+        self.path = Path()
+        # Pub empty velocity to start
+        self.robot.pub_vel(self.F)
         self.rate.sleep()
 
     def main_loop(self):
         while not rospy.is_shutdown():
             self.F = self.calculate_ref_vel()
-            u = self.robot.calculate_control_input(self.F)
-            self.publisher_cmd_vel.publish(u)
+            self.robot.pub_vel(self.F)
             self.send_markers()
             self.publish_path()
             self.rate.sleep()
@@ -118,12 +115,11 @@ if __name__ == '__main__':
         w = input('w = '); a = input('a = '); k = input('k = ')
         P = [float(param) for param in [w,a,k]]
         set_simulation_params(P)
-        curve = lambda t, P : P[1]*cos(P[2]*P[0]*t)*np.array( [cos(P[0]*t), sin(P[0]*t), 0.0] )
-        robot = DifferentialRobot()
-        control_node = ControlNode(robot, curve)
+        control_node = ControlNode()
         control_node.main_loop()
-        # curves examples
-        # https://www.101computing.net/python-turtle-lissajous-curve/
-        # https://www.101computing.net/python-turtle-spirograph/
     except rospy.ROSInterruptException:
         pass
+
+# curves examples
+# https://www.101computing.net/python-turtle-lissajous-curve/
+# https://www.101computing.net/python-turtle-spirograph/

@@ -1,16 +1,25 @@
 #!/usr/bin/env python
+import rospy
 from geometry_msgs.msg import Twist
+from nav_msgs.msg import Odometry
 from math import cos,sin
 from tf.transformations import euler_from_quaternion
 
+from Lidar import *
+
 class DifferentialRobot():
-    def __init__(self):
+    def __init__(self,pose_topic,cmd_topic):
         # Robot pose 2D
         self.x = 0.0
         self.y = 0.0
         self.theta = 0.0
         # For feedback linearization
         self.d = 1.0
+        # Ros topics
+        self.publisher_cmd_vel = rospy.Publisher(cmd_topic, Twist, queue_size=10)
+        rospy.Subscriber(pose_topic, Odometry, self.callback_pose)
+        # Sensor
+        self.range_sensor = Lidar()
 
     def set_pose2D(self,pose2D):
         self.x = float(pose2D[0])
@@ -32,6 +41,10 @@ class DifferentialRobot():
         vel.linear.x = cos(self.theta)*F[0] + sin(self.theta) * F[1] 
         vel.angular.z = -sin(self.theta)*F[0]/self.d + cos(self.theta)*F[1]/self.d
         return vel
+
+    def pub_vel(self,F):
+        u = self.calculate_control_input(F)
+        self.publisher_cmd_vel.publish(u)
 
     def callback_pose(self,data):
         x = data.pose.pose.position.x
