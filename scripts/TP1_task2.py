@@ -6,8 +6,8 @@ from rosgraph_msgs.msg import Clock
 from math import cos, sin, atan2, sqrt
 import numpy as np
 
-from DifferentialRobot import *
-from RvizMarkerSender import *
+from pmr_20212.DifferentialRobot import *
+from pmr_20212.RvizMarkerSender import *
 
 def set_simulation_params(P):
     rospy.set_param('/w', P[0])
