@@ -10,15 +10,21 @@ from DifferentialRobot import *
 from RvizMarkerSender import *
 
 def set_simulation_params(P):
-    rospy.set_param('/w', P[0])
-    rospy.set_param('/a', P[1])
-    rospy.set_param('/k', P[2])
+    rospy.set_param('/x_goal', P[0])
+    rospy.set_param('/y_goal', P[1])
+    rospy.set_param('/d', P[2])
+    rospy.set_param('/c', P[3])
+    rospy.set_param('/p0', P[4])
+    rospy.set_param('/eta', P[5])
 
 def get_simulation_params():
-    w = float(rospy.get_param('/w'))
-    a = float(rospy.get_param('/a'))
-    k = float(rospy.get_param('/k'))
-    return [float(param) for param in [w,a,k]]
+    x_goal = float(rospy.get_param('/x_goal'))
+    y_goal = float(rospy.get_param('/y_goal'))
+    d = float(rospy.get_param('/d'))
+    c = float(rospy.get_param('/c'))
+    p0 = float(rospy.get_param('/p0'))
+    eta = float(rospy.get_param('/eta'))
+    return [float(param) for param in [x_goal, y_goal,d,c,p0,eta]]
 
 class ControlNode():
     def __init__(self, freq=10):
@@ -31,12 +37,12 @@ class ControlNode():
         self.rate = rospy.Rate(self.freq)
         # Robot and curve
         self.robot = DifferentialRobot('/base_pose_ground_truth','/cmd_vel')
-        self.target_curve = lambda t, P : P[1]*cos(P[2]*P[0]*t)*np.array( [cos(P[0]*t), sin(P[0]*t), 0.0] )
+        self.target_curve = lambda t, P : np.array( [P[0], P[1], 0.0] )
         # Rviz markers
         self.robot_pose_marker = RvizMarkerSender('/robot_pose_marker','point', color=[1,0.5,0.5,0.5])
         self.robot_cmd_marker = RvizMarkerSender('/robot_cmd_marker','vector', color=[1,0.8,0.8,0.8],id=1)
         self.target_pose_marker = RvizMarkerSender('/target_pose_marker','point', color=[1,0,1,0],id=2)
-        # Initialize P,F,path,target
+        # Initialize P,F,path
         self.P = get_simulation_params()
         self.F = (0,0,0)
         self.target = (0,0,0)
@@ -54,12 +60,25 @@ class ControlNode():
             self.rate.sleep()
 
     def calculate_ref_vel(self):
-        dt = 1/self.freq
         self.P = get_simulation_params()
-        self.target = self.target_curve(self.time/1e3, self.P)
-        position_error = self.target - np.array(self.robot.get_position3D())
-        feedfoward = (self.target_curve(self.time/1e3+dt,self.P) - self.target_curve(self.time/1e3-dt,self.P))/(2*dt)
-        F = position_error + feedfoward
+        # Attractive
+        d = self.P[2]; c = self.P[3]
+        q = np.array(self.robot.get_position3D())
+        q_goal = self.target_curve(self.time, self.P); self.target = q_goal
+        pf = np.linalg.norm(q - q_goal)
+        if pf <= d:
+            Fatt = -c*(q-q_goal)
+        else:
+            Fatt = -(d*c/pf)*(q-q_goal)
+        # Repulsive
+        b = np.array(self.robot.get_closest_obst_position3D())
+        p0 = self.P[4]; eta = self.P[5]
+        p = np.linalg.norm(q-b)
+        if p <= p0:
+            Frep = (eta*(1/p - 1/p0)/(p**2))*(q - b)/p
+        else:
+            Frep = np.array((0,0,0))
+        F = Fatt + Frep
         return F
 
     def send_markers(self):
@@ -100,14 +119,11 @@ class ControlNode():
 
 if __name__ == '__main__':
     try:
-        w = input('w = '); a = input('a = '); k = input('k = ')
-        P = [float(param) for param in [w,a,k]]
+        x_goal = input('x_goal = '); y_goal = input('y_goal = ')
+        d = 20.; c = 1.0/10; p0 = 10.; eta = 125.
+        P = [float(param) for param in [x_goal, y_goal,d,c,p0,eta]]
         set_simulation_params(P)
         control_node = ControlNode()
         control_node.main_loop()
     except rospy.ROSInterruptException:
         pass
-
-# curves examples
-# https://www.101computing.net/python-turtle-lissajous-curve/
-# https://www.101computing.net/python-turtle-spirograph/

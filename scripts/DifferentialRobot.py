@@ -19,7 +19,7 @@ class DifferentialRobot():
         self.publisher_cmd_vel = rospy.Publisher(cmd_topic, Twist, queue_size=10)
         rospy.Subscriber(pose_topic, Odometry, self.callback_pose)
         # Sensor
-        self.range_sensor = Lidar()
+        self.range_sensor = Lidar('/base_scan')
 
     def set_pose2D(self,pose2D):
         self.x = float(pose2D[0])
@@ -34,6 +34,23 @@ class DifferentialRobot():
 
     def get_position3D(self):
         return [self.x, self.y, 0.0]
+
+    def get_closest_obst_position3D(self):
+        dist_min = float('inf')
+        angle_min = 0
+        for angle,dist in self.range_sensor.get_polar_measurement():
+            if dist < dist_min:
+                dist_min = dist
+                angle_min = angle
+        # msg = ' = ' + str([self.x, dist_min, self.theta, angle_min])
+        # rospy.loginfo(msg)
+        if dist_min is float('inf'):
+            x_closest = float('inf')
+            y_closest = float('inf')
+        else:
+            x_closest = self.x + dist_min*cos(self.theta + angle_min)
+            y_closest = self.y + dist_min*sin(self.theta + angle_min)
+        return (x_closest,y_closest,0.0)
 
     def calculate_control_input(self,F):
         # Low level feedback linearization

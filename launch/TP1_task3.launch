@@ -2,9 +2,9 @@
 
 <launch>
 
-<node pkg="stage_ros" name="stageros" type="stageros" output="screen" args="-d $(find pmr_20212)/worlds/TP1_task2.world" respawn="true"></node>
+<node pkg="stage_ros" name="stageros" type="stageros" output="screen" args="-d $(find pmr_20212)/worlds/TP1_task3.world" respawn="true"></node>
 
-<node pkg="pmr_20212" name="controller" type="TP1_task2.py" output="screen" respawn="true"></node>
+<node pkg="pmr_20212" name="controller" type="TP1_task3.py" output="screen" respawn="true"></node>
 
 <node pkg="rviz" name="rviz" type="rviz" args="-d $(find pmr_20212)/rviz/TP1_task2.rviz" output="screen"></node>
 
