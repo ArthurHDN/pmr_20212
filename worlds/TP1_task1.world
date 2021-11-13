@@ -10,7 +10,7 @@ define topurg ranger
 	sensor( 			
     range [ 1.0  10.0 ]
     fov 360
-   samples 360
+   samples 720
   )
 
   # generic model properties

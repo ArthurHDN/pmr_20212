@@ -93,7 +93,16 @@ class ControlNode():
                 # Next state transition
                 for interval  in continuity_invervals:
                     O1,O2 = interval
-                    if do_2_planar_segments_insersect( (q,q_goal), (O1,O2) ):
+                    obstacle_segment = (O1,O2)
+
+                    robot_center = self.robot.get_position2D(point='center')
+                    robot_goal_angle = atan2( -(q_goal[1] - q[1]), -(q_goal[0] - q[0]) )
+                    point_behind_robot_range_max = [robot_center[0] - self.robot.get_sensor_range_max()*cos(robot_goal_angle), robot_center[1] - self.robot.get_sensor_range_max()*sin(robot_goal_angle)]
+
+                    robot_goal_segment = (point_behind_robot_range_max, q_goal)
+                    robot_goal_segment = (q, q_goal)
+
+                    if do_2_planar_segments_insersect( robot_goal_segment, obstacle_segment ):
                         self.state = TangentBugStates.FollowOi
                         self.d_heuristic_previous = Inf
             # FollowOi 
@@ -151,7 +160,7 @@ class ControlNode():
                     closest_obst = np.array([closest_obst[0],closest_obst[1],0.0])
                     # Vector field to follow wall
                     D = q - closest_obst
-                    E = D - p0*D/(np.linalg.norm(D)+1e-6)
+                    E = D - 2*p0*D/(np.linalg.norm(D)+1e-6)
                     G = -2*atan(np.linalg.norm(E))/pi
                     H = self.follow_dir*sqrt(1-G**2+1e-6)
                     RD = np.array([-D[1], D[0], 0.0])
@@ -159,12 +168,14 @@ class ControlNode():
                     d_reach = Inf
                     # Next state transition
                     for interval in continuity_invervals:
+                    # for point in self.robot.get_measurement_points():
                         for point in interval:
                             d = np.linalg.norm(q_goal - np.array([point[0], point[1], 0.0]))
                             if d_reach > d:
                                 d_reach = d
                     if d_reach < self.d_followed:
                         self.state = TangentBugStates.MotionToGoal
+                    # self.d_followed = d_reach
             # No state
             else:
                 F = (0.0,0.0,0.0)
@@ -215,7 +226,7 @@ class ControlNode():
 if __name__ == '__main__':
     try:
         x_goal = input('x_goal = '); y_goal = input('y_goal = ')
-        d = 2.; c = 1.0; p0 = 2.; eta = 10.
+        d = 2.; c = 1.0; p0 = 1.5; eta = 10.
         P = [float(param) for param in [x_goal, y_goal,d,c,p0,eta]]
         set_simulation_params(P)
         control_node = ControlNode()

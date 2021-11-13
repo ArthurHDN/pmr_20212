@@ -87,6 +87,9 @@ class DifferentialRobot():
         vel.angular.z = -sin(self.theta)*F[0]/self.d + cos(self.theta)*F[1]/self.d
         return vel
 
+    def get_sensor_range_max(self):
+        return self.range_sensor.get_range_max()
+
     def pub_vel(self,F):
         u = self.calculate_control_input(F)
         self.publisher_cmd_vel.publish(u)

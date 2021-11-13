@@ -43,7 +43,10 @@ class Lidar():
                     continuity_inverval_end = measurement[i+1]
                     continuity_invervals.append((continuity_inverval_start,continuity_inverval_end))
         return continuity_invervals
-        
+    
+    def get_range_max(self):
+        return self.range_max
+
     def callback_scan(self,data):
         self.angle_min = data.angle_min
         self.angle_max = data.angle_max
