@@ -90,17 +90,16 @@ class ControlNode():
                 else:
                     Frep = np.array((0,0,0))
                 F = Fatt + Frep
+                self.d_followed = Inf
                 # Next state transition
                 for interval  in continuity_invervals:
                     O1,O2 = interval
                     obstacle_segment = (O1,O2)
 
                     robot_center = self.robot.get_position2D(point='center')
-                    robot_goal_angle = atan2( -(q_goal[1] - q[1]), -(q_goal[0] - q[0]) )
+                    robot_goal_angle = atan2( (q_goal[1] - q[1]), (q_goal[0] - q[0]) )
                     point_behind_robot_range_max = [robot_center[0] - self.robot.get_sensor_range_max()*cos(robot_goal_angle), robot_center[1] - self.robot.get_sensor_range_max()*sin(robot_goal_angle)]
-
                     robot_goal_segment = (point_behind_robot_range_max, q_goal)
-                    robot_goal_segment = (q, q_goal)
 
                     if do_2_planar_segments_insersect( robot_goal_segment, obstacle_segment ):
                         self.state = TangentBugStates.FollowOi
@@ -139,15 +138,15 @@ class ControlNode():
                 if d_heuristic_min >= self.d_heuristic_previous:
                     self.state = TangentBugStates.FollowWall
                     self.d_followed = Inf
-                    for point in self.robot.get_measurement_points():
-                        d = np.linalg.norm(q_goal - np.array([point[0], point[1], 0.0]))
-                        if self.d_followed > d:
-                            self.d_followed = d
                     orientation = get_planar_orientation_3_points(q,Oi_min,self.robot.get_closest_obst_position3D())
                     if orientation == 1:
                         self.follow_dir = -1
                     else:
                         self.follow_dir = 1
+                    for point in self.robot.get_measurement_points():
+                        d = np.linalg.norm(q_goal - np.array([point[0], point[1], 0.0]))
+                        if self.d_followed > d:
+                            self.d_followed = d
                 # Update d_heuristic
                 self.d_heuristic_previous = d_heuristic_min
             # FollowWall
