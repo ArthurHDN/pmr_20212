@@ -9,41 +9,43 @@ import numpy as np
 from pmr_20212.DifferentialRobot import *
 from pmr_20212.RvizMarkerSender import *
 
-def set_simulation_params(P):
-    rospy.set_param('/w', P[0])
-    rospy.set_param('/a', P[1])
-    rospy.set_param('/k', P[2])
-
-def get_simulation_params():
-    w = float(rospy.get_param('/w'))
-    a = float(rospy.get_param('/a'))
-    k = float(rospy.get_param('/k'))
-    return [float(param) for param in [w,a,k]]
-
 class ControlNode():
-    def __init__(self, freq=10):
+    def __init__(self, params, freq=10):
         # Init node
+        self.set_simulation_params(params)
         rospy.init_node('control_node')
-        # Topics
         self.publisher_robot_path = rospy.Publisher('/robot_path', Path, queue_size=1)
         rospy.Subscriber('/clock', Clock, self.callback_time)
         self.freq = float(freq)
         self.rate = rospy.Rate(self.freq)
-        # Robot and curve
+        # Robot and goal
         self.robot = DifferentialRobot('/base_pose_ground_truth','/cmd_vel')
-        self.target_curve = lambda t, P : P[1]*cos(P[2]*P[0]*t)*np.array( [cos(P[0]*t), sin(P[0]*t), 0.0] )
+        self.target = lambda t, P : P[1]*cos(P[2]*P[0]*t)*np.array( [cos(P[0]*t), sin(P[0]*t), 0.0] )
         # Rviz markers
-        self.robot_pose_marker = RvizMarkerSender('/robot_pose_marker','point', color=[1,0.5,0.5,0.5])
-        self.robot_cmd_marker = RvizMarkerSender('/robot_cmd_marker','vector', color=[1,0.8,0.8,0.8],id=1)
-        self.target_pose_marker = RvizMarkerSender('/target_pose_marker','point', color=[1,0,1,0],id=2)
-        # Initialize P,F,path,target
-        self.P = get_simulation_params()
+        self.robot_pose_marker = RvizMarkerSender('/robot_pose_marker','point', color=[0.2,0.2,1,1])
+        self.robot_cmd_marker = RvizMarkerSender('/robot_cmd_marker','vector', color=[1,0.2,0.2,1],id=1)
+        self.target_pose_marker = RvizMarkerSender('/target_pose_marker','point', color=[0,1,0,1],id=2)
+        # Initialize params,F,path,target
+        self.simulation_params = self.get_simulation_params()
         self.F = (0,0,0)
-        self.target = (0,0,0)
+        self.target_now = (0,0,0)
         self.path = Path()
         # Pub empty velocity to start
         self.robot.pub_vel(self.F)
         self.rate.sleep()
+
+    @staticmethod
+    def set_simulation_params(params):
+        rospy.set_param('/w', params[0])
+        rospy.set_param('/a', params[1])
+        rospy.set_param('/k', params[2])
+
+    @staticmethod
+    def get_simulation_params():
+        w = float(rospy.get_param('/w'))
+        a = float(rospy.get_param('/a'))
+        k = float(rospy.get_param('/k'))
+        return [float(param) for param in [w,a,k]]
 
     def main_loop(self):
         while not rospy.is_shutdown():
@@ -55,10 +57,10 @@ class ControlNode():
 
     def calculate_ref_vel(self):
         dt = 1/self.freq
-        self.P = get_simulation_params()
-        self.target = self.target_curve(self.time/1e3, self.P)
-        position_error = self.target - np.array(self.robot.get_position3D())
-        feedfoward = (self.target_curve(self.time/1e3+dt,self.P) - self.target_curve(self.time/1e3-dt,self.P))/(2*dt)
+        self.simulation_params = self.get_simulation_params()
+        self.target_now = self.target(self.time/1e3, self.simulation_params)
+        position_error = self.target_now - np.array(self.robot.get_position3D())
+        feedfoward = (self.target(self.time/1e3+dt,self.simulation_params) - self.target(self.time/1e3-dt,self.simulation_params))/(2*dt)
         F = position_error + feedfoward
         return F
 
@@ -74,7 +76,7 @@ class ControlNode():
         self.robot_cmd_marker.update_marker(pose3D=pose3D,scale=scale)
         self.robot_cmd_marker.pub_marker()
         # Target pose
-        pose3D=[self.target[0],self.target[1],0,0,0,0]
+        pose3D=[self.target_now[0],self.target_now[1],0,0,0,0]
         self.target_pose_marker.update_marker(pose3D=pose3D)
         self.target_pose_marker.pub_marker()
 
@@ -101,9 +103,8 @@ class ControlNode():
 if __name__ == '__main__':
     try:
         w = input('w = '); a = input('a = '); k = input('k = ')
-        P = [float(param) for param in [w,a,k]]
-        set_simulation_params(P)
-        control_node = ControlNode()
+        params = [float(param) for param in [w,a,k]]
+        control_node = ControlNode(params)
         control_node.main_loop()
     except rospy.ROSInterruptException:
         pass

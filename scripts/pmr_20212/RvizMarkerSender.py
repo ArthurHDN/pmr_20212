@@ -20,10 +20,10 @@ class RvizMarkerSender():
         self.marker.scale.x = 0.5
         self.marker.scale.y = 0.5
         self.marker.scale.z = 0.5
-        self.marker.color.a = float(self.color[0])
-        self.marker.color.r = float(self.color[1])
-        self.marker.color.g = float(self.color[2])
-        self.marker.color.b = float(self.color[3])
+        self.marker.color.r = float(self.color[0])
+        self.marker.color.g = float(self.color[1])
+        self.marker.color.b = float(self.color[2])
+        self.marker.color.a = float(self.color[3])
 
     def update_marker(self, pose3D=[0,0,0,0,0,0],scale=[0.5,0.5,0.5]):
         self.marker.header.stamp = rospy.Time.now()
@@ -38,10 +38,10 @@ class RvizMarkerSender():
         self.marker.scale.x = float(scale[0])
         self.marker.scale.y = float(scale[1])
         self.marker.scale.z = float(scale[2])
-        # self.marker.color.a = float(color[0])
-        # self.marker.color.r = float(color[1])
-        # self.marker.color.g = float(color[2])
-        # self.marker.color.b = float(color[3])
+        # self.marker.color.r = float(color[0])
+        # self.marker.color.g = float(color[1])
+        # self.marker.color.b = float(color[2])
+        # self.marker.color.a = float(color[3])
 
     def pub_marker(self):
         self.publisher.publish(self.marker)

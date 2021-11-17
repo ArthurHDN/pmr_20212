@@ -86,5 +86,5 @@ floorplan
 )
 
 # throw in a robot
-erratic( pose [ 50.000 0.000 0.000 90.000 ] name "robot_0" color "blue")
+erratic( pose [ 50.000 0.000 0.000 90.000 ] name "robot_0" color_rgba [0.000 0.000 1.000 0.200])
 #robot_block(pose [-40.000 -47.000 0.000 0.000 ])

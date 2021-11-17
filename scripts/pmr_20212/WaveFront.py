@@ -3,7 +3,7 @@ from AuxAlgebra import Inf
 import sys
 sys.setrecursionlimit(1500)
 
-class ReadMap():
+class WaveFront():
     _GOAL_COST = 2
     _OBSTACLE_COST = Inf
     _NULL_COST = 0
@@ -28,7 +28,7 @@ class ReadMap():
         y = min(max(round((-q[1] + self.map_size[1]/2))/self.scale[1], 0), self.height-1)
         return (int(x), int(y))
 
-    def compute_map(self, q_goal):
+    def propagate_wave(self, q_goal,expand_obstacles=False):
         x_goal_pixel, y_goal_pixel = self.get_pixel_by_position2D(q_goal)
         computed_map = []
         for P in self.pixels_values:
@@ -38,16 +38,16 @@ class ReadMap():
             else:
                 cost = self._NULL_COST
             computed_map.append( [obstacle,cost] )
-        self.computed_map = self.expand_obstacles_in_map(computed_map)
+        if expand_obstacles:
+            self.computed_map = self.expand_obstacles_in_map(computed_map)
         computed_map[y_goal_pixel*self.height + x_goal_pixel][1] = self._GOAL_COST  
-        self.computed_map = ReadMap.wave_front(computed_map, (self.width, self.height), self._GOAL_COST, self._NULL_COST)
+        self.computed_map = WaveFront.wave_front(computed_map, (self.width, self.height), self._GOAL_COST, self._NULL_COST)
 
     def expand_obstacles_in_map(self,computed_map):
         new_computed_map = computed_map
         for i in range(self.height):
             for j in range(self.width):
                 if computed_map[i*self.height + j][0] == True:
-                    #print('pixel',(i,j), i*self.height + j, 'tem obst', computed_map[i*self.height + j])
                     if i+1 < self.height:
                         new_computed_map[(i+1)*self.height + j][1] = self._OBSTACLE_COST
                     if i-1 >= 0:
@@ -105,7 +105,7 @@ class ReadMap():
                     if j-1 >= 0:
                         if computed_map[i*image_height + (j-1)][1] == null_cost:
                             computed_map[i*image_height + (j-1)][1] = next_cost
-        return ReadMap.wave_front(computed_map, image_size, next_cost, null_cost)
+        return WaveFront.wave_front(computed_map, image_size, next_cost, null_cost)
 
     def __str__(self):
         string = ''

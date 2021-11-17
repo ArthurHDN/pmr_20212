@@ -81,7 +81,7 @@ floorplan
 ( 
   name "my_map"
   bitmap "map_obstacles_2.png"
-  size [105.000 105.000 10.000]
+  size [205.000 205.000 10.000]
   pose [ 0.000 0.000 0.000 0.000 ] #[x y ? theta]
 )
 

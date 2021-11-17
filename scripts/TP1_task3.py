@@ -3,83 +3,90 @@ import rospy
 from geometry_msgs.msg import PoseStamped
 from nav_msgs.msg import Path
 from rosgraph_msgs.msg import Clock
-from math import cos, sin, atan2, sqrt
+from math import atan2, sqrt
 import numpy as np
 
 from pmr_20212.DifferentialRobot import *
 from pmr_20212.RvizMarkerSender import *
-
-def set_simulation_params(P):
-    rospy.set_param('/x_goal', P[0])
-    rospy.set_param('/y_goal', P[1])
-    rospy.set_param('/d', P[2])
-    rospy.set_param('/c', P[3])
-    rospy.set_param('/p0', P[4])
-    rospy.set_param('/eta', P[5])
-
-def get_simulation_params():
-    x_goal = float(rospy.get_param('/x_goal'))
-    y_goal = float(rospy.get_param('/y_goal'))
-    d = float(rospy.get_param('/d'))
-    c = float(rospy.get_param('/c'))
-    p0 = float(rospy.get_param('/p0'))
-    eta = float(rospy.get_param('/eta'))
-    return [float(param) for param in [x_goal, y_goal,d,c,p0,eta]]
+from pmr_20212.PotentialFields import *
 
 class ControlNode():
-    def __init__(self, freq=10):
+    _ARRIVE_TOLERANCE = 0.25
+    _LOCAL_MINIMUM_MAX_VECTOR_NORM = 0.01
+    _LOCAL_MINIMUM_MAX_ITERATIONS = 10
+
+    def __init__(self, params, freq=10):
         # Init node
+        self.set_simulation_params(params)
         rospy.init_node('control_node')
-        # Topics
         self.publisher_robot_path = rospy.Publisher('/robot_path', Path, queue_size=1)
         rospy.Subscriber('/clock', Clock, self.callback_time)
         self.freq = float(freq)
         self.rate = rospy.Rate(self.freq)
-        # Robot and curve
+        # Robot and goal
         self.robot = DifferentialRobot('/base_pose_ground_truth','/cmd_vel')
-        self.target_curve = lambda t, P : np.array( [P[0], P[1], 0.0] )
+        self.target = lambda t, P : np.array( [P[0], P[1], 0.0] )
         # Rviz markers
-        self.robot_pose_marker = RvizMarkerSender('/robot_pose_marker','point', color=[1,0.5,0.5,0.5])
-        self.robot_cmd_marker = RvizMarkerSender('/robot_cmd_marker','vector', color=[1,0.8,0.8,0.8],id=1)
-        self.target_pose_marker = RvizMarkerSender('/target_pose_marker','point', color=[1,0,1,0],id=2)
-        # Initialize P,F,path
-        self.P = get_simulation_params()
+        self.robot_pose_marker = RvizMarkerSender('/robot_pose_marker','point', color=[0.2,0.2,1,1])
+        self.robot_cmd_marker = RvizMarkerSender('/robot_cmd_marker','vector', color=[1,0.2,0.2,1],id=1)
+        self.target_pose_marker = RvizMarkerSender('/target_pose_marker','point', color=[0,1,0,1],id=2)
+        # Initialize params,F,path
+        self.simulation_params = self.get_simulation_params()
         self.F = (0,0,0)
-        self.target = (0,0,0)
+        self.target_now = (0,0,0)
         self.path = Path()
         # Pub empty velocity to start
         self.robot.pub_vel(self.F)
         self.rate.sleep()
 
+    @staticmethod
+    def set_simulation_params(params):
+        rospy.set_param('/x_goal', params[0])
+        rospy.set_param('/y_goal', params[1])
+        rospy.set_param('/d', params[2])
+        rospy.set_param('/c', params[3])
+        rospy.set_param('/p0', params[4])
+        rospy.set_param('/eta', params[5])
+
+    @staticmethod
+    def get_simulation_params():
+        x_goal = float(rospy.get_param('/x_goal'))
+        y_goal = float(rospy.get_param('/y_goal'))
+        d = float(rospy.get_param('/d'))
+        c = float(rospy.get_param('/c'))
+        p0 = float(rospy.get_param('/p0'))
+        eta = float(rospy.get_param('/eta'))
+        return [float(param) for param in [x_goal, y_goal,d,c,p0,eta]]
+
     def main_loop(self):
+        local_minimum_iterations = 0
         while not rospy.is_shutdown():
-            self.F = self.calculate_ref_vel()
+            self.simulation_params = self.get_simulation_params()
+            d = self.simulation_params[2]; c = self.simulation_params[3]
+            p0 = self.simulation_params[4]; eta = self.simulation_params[5]
+
+            q = np.array(self.robot.get_position3D())
+            self.target_now = self.target(self.time, self.simulation_params)
+            b = np.array(self.robot.get_closest_obst_position3D())
+
+            self.F = PotentialFields.calculate_vector(q, self.target_now, b, d, c, p0, eta)
             self.robot.pub_vel(self.F)
             self.send_markers()
             self.publish_path()
             self.rate.sleep()
 
-    def calculate_ref_vel(self):
-        self.P = get_simulation_params()
-        # Attractive
-        d = self.P[2]; c = self.P[3]
-        q = np.array(self.robot.get_position3D())
-        q_goal = self.target_curve(self.time, self.P); self.target = q_goal
-        pf = np.linalg.norm(q - q_goal)
-        if pf <= d:
-            Fatt = -c*(q-q_goal)
-        else:
-            Fatt = -(d*c/pf)*(q-q_goal)
-        # Repulsive
-        b = np.array(self.robot.get_closest_obst_position3D())
-        p0 = self.P[4]; eta = self.P[5]
-        p = np.linalg.norm(q-b)
-        if p <= p0:
-            Frep = (eta*(1/p - 1/p0)/(p**2))*(q - b)/p
-        else:
-            Frep = np.array((0,0,0))
-        F = Fatt + Frep
-        return F
+            if np.linalg.norm(q - self.target_now) <= self._ARRIVE_TOLERANCE:
+                msg = 'Goal reached!'
+                rospy.loginfo(msg)
+                break
+            if local_minimum_iterations >= self._LOCAL_MINIMUM_MAX_ITERATIONS:
+                msg = 'Stucked in local minimum'
+                rospy.loginfo(msg)
+                break
+            if np.linalg.norm(self.F) <= self._LOCAL_MINIMUM_MAX_VECTOR_NORM:
+                local_minimum_iterations = local_minimum_iterations + 1
+            else:
+                local_minimum_iterations = 0
 
     def send_markers(self):
         # Robot pose
@@ -93,7 +100,7 @@ class ControlNode():
         self.robot_cmd_marker.update_marker(pose3D=pose3D,scale=scale)
         self.robot_cmd_marker.pub_marker()
         # Target pose
-        pose3D=[self.target[0],self.target[1],0,0,0,0]
+        pose3D=[self.target_now[0],self.target_now[1],0,0,0,0]
         self.target_pose_marker.update_marker(pose3D=pose3D)
         self.target_pose_marker.pub_marker()
 
@@ -121,9 +128,8 @@ if __name__ == '__main__':
     try:
         x_goal = input('x_goal = '); y_goal = input('y_goal = ')
         d = 20.; c = 1.0/10; p0 = 10.; eta = 125.
-        P = [float(param) for param in [x_goal, y_goal,d,c,p0,eta]]
-        set_simulation_params(P)
-        control_node = ControlNode()
+        params = [float(param) for param in [x_goal, y_goal,d,c,p0,eta]]
+        control_node = ControlNode(params)
         control_node.main_loop()
     except rospy.ROSInterruptException:
         pass
