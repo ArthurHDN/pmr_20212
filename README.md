@@ -27,7 +27,7 @@ $ roslaunch pmr_20212 TP1_task1.launch
 ```
 $ roslaunch pmr_20212 TP1_task2.launch
 ```
-![](https://github.com/ArthurHDN/pmr_20212/media/gif_trajectory_tracking.gif)
+<div style="text-align:center"><img src="https://github.com/ArthurHDN/pmr_20212/media/gif_trajectory_tracking.gif" width="400" height="400" /></div>
 
 ### Tarefa 3: Potential Fields
 
