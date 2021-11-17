@@ -16,33 +16,32 @@ $ git clone https://github.com/ArthurHDN/pmr_20212.git
 4. Reconstrua sua workspace
 
 ## TP1
-### Tarefa 1:
-TBA
+### Tarefa 1: Tangent Bug
 
 ```
 $ roslaunch pmr_20212 TP1_task1.launch
 ```
 
-### Tarefa 2:
-TBA
+### Tarefa 2: Trajectory Tracking
 
 ```
 $ roslaunch pmr_20212 TP1_task2.launch
 ```
+![](https://github.com/ArthurHDN/pmr_20212/media/gif_trajectory_tracking.gif)
 
-### Tarefa 3:
-TBA
+### Tarefa 3: Potential Fields
 
 ```
 $ roslaunch pmr_20212 TP1_task3.launch
 ```
+![](https://github.com/ArthurHDN/pmr_20212/media/gif_potential_fields.gif)
 
-### Tarefa 4:
-TBA
+### Tarefa 4: Wave Front
 
 ```
 $ roslaunch pmr_20212 TP1_task4.launch
 ```
+![](https://github.com/ArthurHDN/pmr_20212/media/gif_wave_front.gif)
 
 ## TP2
 TBA
