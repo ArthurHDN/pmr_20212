@@ -70,7 +70,7 @@ window
   show_trailarrows 0
   show_trailrise 0
   show_trailfast 0
-  show_occupancy 0
+  show_occupancy 1
   #show_tree 0
   pcam_on 0
   screenshots 0
@@ -86,4 +86,5 @@ floorplan
 )
 
 # throw in a robot
-erratic( pose [ 20.000 0.000 0.000 90.000 ] name "robot_0" color "blue")
+erratic( pose [ 50.000 0.000 0.000 90.000 ] name "robot_0" color "blue")
+#robot_block(pose [-40.000 -47.000 0.000 0.000 ])

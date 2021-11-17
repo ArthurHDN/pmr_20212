@@ -3,22 +3,21 @@ import rospy
 from geometry_msgs.msg import PoseStamped
 from nav_msgs.msg import Path
 from rosgraph_msgs.msg import Clock
-from math import cos, sin, atan2, sqrt
+from math import atan2, sqrt
 import numpy as np
 
 from pmr_20212.DifferentialRobot import *
 from pmr_20212.RvizMarkerSender import *
+from pmr_20212.ReadMap import *
 
 def set_simulation_params(P):
-    rospy.set_param('/w', P[0])
-    rospy.set_param('/a', P[1])
-    rospy.set_param('/k', P[2])
+    rospy.set_param('/x_goal', P[0])
+    rospy.set_param('/y_goal', P[1])
 
 def get_simulation_params():
-    w = float(rospy.get_param('/w'))
-    a = float(rospy.get_param('/a'))
-    k = float(rospy.get_param('/k'))
-    return [float(param) for param in [w,a,k]]
+    x_goal = float(rospy.get_param('/x_goal'))
+    y_goal = float(rospy.get_param('/y_goal'))
+    return [float(param) for param in [x_goal, y_goal]]
 
 class ControlNode():
     def __init__(self, freq=10):
@@ -46,6 +45,10 @@ class ControlNode():
         self.rate.sleep()
 
     def main_loop(self):
+        self.P = get_simulation_params()
+        self.target = self.target_curve(self.time/1e3, self.P)
+        self.read_map = ReadMap('/workspaces/arthur_ws/src/pmr_20212//worlds/map_obstacles_3.png', (205, 205))
+        self.read_map.compute_map(self.target)
         while not rospy.is_shutdown():
             self.F = self.calculate_ref_vel()
             self.robot.pub_vel(self.F)
@@ -55,13 +58,10 @@ class ControlNode():
 
     def calculate_ref_vel(self):
         # descobrir qual proximo quadradinho
-        dt = 1/self.freq
-        self.P = get_simulation_params()
-        self.target = self.target_curve(self.time/1e3, self.P)
-        position_error = self.target - np.array(self.robot.get_position3D())
-        feedfoward = (self.target_curve(self.time/1e3+dt,self.P) - self.target_curve(self.time/1e3-dt,self.P))/(2*dt)
-        F = position_error + feedfoward
-        return F
+        q = self.robot.get_position2D()
+        q_pixel = self.read_map.get_pixel_by_position2D(q)
+        F = self.read_map.get_next_pixel(q_pixel)
+        return [10*x for x in F]
 
     def send_markers(self):
         # Robot pose
@@ -101,8 +101,8 @@ class ControlNode():
 
 if __name__ == '__main__':
     try:
-        w = input('x_goal = '); a = input('y_goal = '); k = 10
-        P = [float(param) for param in [w,a,k]]
+        x_goal = input('x_goal = '); y_goal = input('y_goal = ')
+        P = [float(param) for param in [x_goal, y_goal]]
         set_simulation_params(P)
         control_node = ControlNode()
         control_node.main_loop()

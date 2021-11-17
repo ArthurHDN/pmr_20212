@@ -28,7 +28,7 @@ class DifferentialRobot():
 
     def get_position2D(self, point = 'controlled'):
         if point == 'controlled':
-            return [self.x + self.d*cos(self.theta), self.y + self.d*cos(self.theta), 0.0]
+            return [self.x + self.d*cos(self.theta), self.y + self.d*cos(self.theta)]
         if point == 'center':
             return [self.x, self.y]
 
