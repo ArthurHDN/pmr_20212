@@ -50,18 +50,26 @@ class ControlNode():
         self.read_map = ReadMap('/workspaces/arthur_ws/src/pmr_20212//worlds/map_obstacles_3.png', (205, 205))
         self.read_map.compute_map(self.target)
         while not rospy.is_shutdown():
-            self.F = self.calculate_ref_vel()
+            q = self.robot.get_position2D()
+            q_pixel = self.read_map.get_pixel_by_position2D(q)
+            self.F = [10*x for x in self.read_map.get_next_pixel(q_pixel)]
             self.robot.pub_vel(self.F)
             self.send_markers()
             self.publish_path()
             self.rate.sleep()
-
-    def calculate_ref_vel(self):
-        # descobrir qual proximo quadradinho
-        q = self.robot.get_position2D()
-        q_pixel = self.read_map.get_pixel_by_position2D(q)
-        F = self.read_map.get_next_pixel(q_pixel)
-        return [10*x for x in F]
+            q_cost = self.read_map.get_pixel_cost(q_pixel)
+            if q_cost == self.read_map._GOAL_COST:
+                msg = 'Goal reached!'
+                rospy.loginfo(msg)
+                break
+            if q_cost == self.read_map._NULL_COST:
+                msg = 'No route found to goal.'
+                rospy.loginfo(msg)
+                break
+            if q_cost == self.read_map._OBSTACLE_COST:
+                msg = 'Are you inside a obstacle ??'
+                rospy.loginfo(msg)
+                break
 
     def send_markers(self):
         # Robot pose
