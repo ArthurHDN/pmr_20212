@@ -27,21 +27,21 @@ $ roslaunch pmr_20212 TP1_task1.launch
 ```
 $ roslaunch pmr_20212 TP1_task2.launch
 ```
-<div style="text-align:center"><img src="https://github.com/ArthurHDN/pmr_20212/media/gif_trajectory_tracking.gif" width="400" height="400" /></div>
+<div style="text-align:center"><img src="https://github.com/ArthurHDN/pmr_20212/blob/main/media/gif_trajectory_tracking.gif" width="400" height="400" /></div>
 
 ### Tarefa 3: Potential Fields
 
 ```
 $ roslaunch pmr_20212 TP1_task3.launch
 ```
-![](https://github.com/ArthurHDN/pmr_20212/media/gif_potential_fields.gif)
+![](https://github.com/ArthurHDN/pmr_20212/blob/main/media/gif_potential_fields.gif)
 
 ### Tarefa 4: Wave Front
 
 ```
 $ roslaunch pmr_20212 TP1_task4.launch
 ```
-![](https://github.com/ArthurHDN/pmr_20212/media/gif_wave_front.gif)
+![](https://github.com/ArthurHDN/pmr_20212/blob/main/media/gif_wave_front.gif)
 
 ## TP2
 TBA
