@@ -26,6 +26,7 @@ $ catkin_make
 ```bash
 $ roslaunch pmr_20212 TP1_task1.launch
 ```
+<div style="text-align:center"><img src="https://github.com/ArthurHDN/pmr_20212/blob/main/media/gif_tangent_bug.gif"/></div>
 
 ### Tarefa 2: Trajectory Tracking
 
