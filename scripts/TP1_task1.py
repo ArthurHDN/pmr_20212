@@ -9,7 +9,7 @@ import numpy as np
 from pmr_20212.DifferentialRobot import *
 from pmr_20212.RvizMarkerSender import *
 from pmr_20212.TangentBug import *
-from pmr_20212.AuxAlgebra import do_2_planar_segments_insersect, calc_planar_dist, Inf, get_planar_orientation_3_points
+from pmr_20212.AuxAlgebra import calc_planar_dist, Inf
 
 class ControlNode():
     _ARRIVE_TOLERANCE = 0.25
@@ -61,8 +61,11 @@ class ControlNode():
 
     def main_loop(self):
         # Start in MotionToGoal state
+        previous_state = -10
         self.target_now = self.target(self.time, self.simulation_params); 
         q_goal = self.target_now
+        q_init_follow_wall = (0,0)
+        time_init_follow_wall = self.time
 
         self.tangent_bug = TangentBug(self.target_now)
         self.tangent_bug.update_params( self.get_simulation_params() )
@@ -79,13 +82,19 @@ class ControlNode():
 
             self.tangent_bug.update_robot(q,b,continuity_intervals,robot_center,sensor_max, measurement)
 
-            msg = 'State = ' + str(self.state)
-            rospy.loginfo(msg)
+            if self.state != previous_state:
+                previous_state = self.state
+                msg = 'State = ' + str(self.state) + ' , t = ' + str(self.time/1000) + ' , q = ' + str(q)
+                rospy.loginfo(msg)
             
             if self.state == TangentBug._STATE_MOTION_TO_GOAL:
                 F,next_state = self.tangent_bug.motion_to_goal()
+                q_init_follow_wall = (0,0)
+                time_init_follow_wall = self.time
             elif self.state == TangentBug._STATE_MOTION_TO_OI:
                 F,next_state = self.tangent_bug.motion_to_oi()
+                q_init_follow_wall = (q[0], q[1])
+                time_init_follow_wall = self.time
             elif self.state == TangentBug._STATE_FOLLOW_WALL:
                 F,next_state = self.tangent_bug.follow_wall()
             else:
@@ -99,6 +108,10 @@ class ControlNode():
 
             if np.linalg.norm(q - self.target_now) <= self._ARRIVE_TOLERANCE:
                 msg = 'Goal reached!'
+                rospy.loginfo(msg)
+                break
+            elif self.state == TangentBug._STATE_FOLLOW_WALL and calc_planar_dist(q_init_follow_wall, q) < self._ARRIVE_TOLERANCE and time_init_follow_wall - self.time > 2e3:
+                msg = 'Goal is unreachable!'
                 rospy.loginfo(msg)
                 break
 
