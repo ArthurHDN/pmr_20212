@@ -13,11 +13,23 @@ $ cd <my workspace>/src
 $ git clone https://github.com/ArthurHDN/pmr_20212.git
 ```
 
-4. Reconstrua sua workspace
+4. Também certifique-se de ter instalado o map-server para sua distribuição do ROS
+
+```bash
+$ sudo apt-get install -y ros-$ROS_DISTRO-map-server
+```
+
+5. Reconstrua sua workspace
 
 ```bash
 $ cd <my workspace>
 $ catkin_make
+```
+
+6. Faça o source de sua workspace na qual este pacote está
+
+```bash
+$ source <my workspace>/devel/setup.bash
 ```
 
 ## TP1
