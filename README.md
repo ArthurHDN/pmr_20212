@@ -38,28 +38,28 @@ $ source <my workspace>/devel/setup.bash
 ```bash
 $ roslaunch pmr_20212 TP1_task1.launch
 ```
-<div style="text-align:center"><img src="https://github.com/ArthurHDN/pmr_20212/blob/main/media/gif_tangent_bug.gif"/></div>
+<div style="text-align:center"><img src="https://github.com/ArthurHDN/pmr_20212/blob/medias/media/gif_tangent_bug.gif"/></div>
 
 ### Tarefa 2: Trajectory Tracking
 
 ```bash
 $ roslaunch pmr_20212 TP1_task2.launch
 ```
-<div style="text-align:center"><img src="https://github.com/ArthurHDN/pmr_20212/blob/main/media/gif_trajectory_tracking.gif"/></div>
+<div style="text-align:center"><img src="https://github.com/ArthurHDN/pmr_20212/blob/medias/media/gif_trajectory_tracking_2.gif"/></div>
 
 ### Tarefa 3: Potential Fields
 
 ```bash
 $ roslaunch pmr_20212 TP1_task3.launch
 ```
-<div style="text-align:center"><img src="https://github.com/ArthurHDN/pmr_20212/blob/main/media/gif_potential_fields.gif"/></div>
+<div style="text-align:center"><img src="https://github.com/ArthurHDN/pmr_20212/blob/medias/media/gif_potential_fields.gif"/></div>
 
 ### Tarefa 4: Wave Front
 
 ```bash
 $ roslaunch pmr_20212 TP1_task4.launch
 ```
-<div style="text-align:center"><img src="https://github.com/ArthurHDN/pmr_20212/blob/main/media/gif_wave_front.gif"/></div>
+<div style="text-align:center"><img src="https://github.com/ArthurHDN/pmr_20212/blob/medias/media/gif_wave_front.gif"/></div>
 
 ## TP2
 TBA
