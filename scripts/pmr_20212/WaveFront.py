@@ -28,6 +28,9 @@ class WaveFront():
         y = min(max(round((-q[1] + self.map_size[1]/2))/self.scale[1], 0), self.height-1)
         return (int(x), int(y))
 
+    def compute_path(self, q_init, q_goal):
+        pass
+
     def propagate_wave(self, q_goal,expand_obstacles=False):
         x_goal_pixel, y_goal_pixel = self.get_pixel_by_position2D(q_goal)
         computed_map = []
