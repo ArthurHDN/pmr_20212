@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<launch>
+
+    <node pkg="stage_ros" type="stageros" name="stageros" args="-d $(find pmr_20212)/worlds/TP2_task2_new.world" output="screen"/>
+
+    <node pkg="gmapping" type="slam_gmapping" name="GMAP" args="-d scan:=base_scan"/>
+    <param name="xmin" value="-20.0"/>
+    <param name="ymin" value="-25.0"/>
+    <param name="xmax" value="20.0"/>
+    <param name="ymax" value="20.0"/>
+    <param name="delta" value="0.1" />
+
+    <node pkg="pmr_20212" name="controller" type="voronoisons.py" output="screen"/>
+    <!--node pkg="tp_2_pmr" type="save_data.py" name="save_data" output="screen"/-->
+
+    <!--node pkg="rviz" type="rviz" name="rviz" args="-d $(find tp_2_pmr)/rviz/rrt_config.rviz"/-->
+
+
+</launch>
