@@ -6,11 +6,11 @@
 
 <node pkg="pmr_20212" name="controller" type="TP2_task2.py" output="screen" respawn="true"></node>
 
-<node pkg="rviz" name="rviz" type="rviz" args="-d $(find pmr_20212)/rviz/TP1.rviz" output="screen"></node>
+<!--node pkg="rviz" name="rviz" type="rviz" args="-d $(find pmr_20212)/rviz/TP1.rviz" output="screen"></node-->
 
-<node pkg="tf" type="static_transform_publisher" name="link1_broadcaster" args="0 0 0 0 0 0 1 /map /world 10" />
+<!--node pkg="tf" type="static_transform_publisher" name="link1_broadcaster" args="0 0 0 0 0 0 1 /map /world 10" /-->
 
-<node pkg="map_server" name="map_server" type="map_server" args="$(find pmr_20212)/worlds/map_obstacles_2.yaml"></node>
+<!--node pkg="map_server" name="map_server" type="map_server" args="$(find pmr_20212)/worlds/map_obstacles_2.yaml"></node-->
 
 <!-- <node pkg="rqt_graph" name="rqt_graph" type="rqt_graph" output="screen"></node> -->
 
