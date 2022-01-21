@@ -62,11 +62,11 @@ class ControlNode():
         previous_state = -10
         #q_init_follow_wall = (0,0)
 
-        self.GVD = GVD(self.target_now)
+        self.GVD = GVD()
         self.GVD.update_params( self.get_simulation_params() )
 
         next_state = GVD._STATE_OBSTACLE_TOO_CLOSE
-        #
+        self.rate.sleep()
 
         while not rospy.is_shutdown():
             q = np.array(self.robot.get_position3D())
@@ -76,16 +76,16 @@ class ControlNode():
             sensor_max = self.robot.get_sensor_range_max()
             measurement = self.robot.get_measurement_points()
 
-            #
-            self.GVD.update_robot(q,b,robot_pose2D,robot_center,sensor_max, measurement)
-            #
+            self.GVD.update_robot(q,b,robot_pose2D,robot_center,sensor_max,measurement)
 
-            if self.state != previous_state:
-                previous_state = self.state
-                msg = 'State = ' + str(self.state) + ' , t = ' + str(self.time/1000) + ' , q = ' + str(q)
-                rospy.loginfo(msg)
+            msg = 'State = ' + str(self.state) + ' , t = ' + str(self.time/1000)
+            rospy.loginfo(msg)
+
+            #if self.state != previous_state:
+                #previous_state = self.state
+                #msg = 'State = ' + str(self.state) + ' , t = ' + str(self.time/1000) + ' , q = ' + str(q)
+                #rospy.loginfo(msg)
             
-            #
             if self.state == GVD._STATE_OBSTACLE_TOO_CLOSE:
                 F,next_state = self.GVD.obstacle_too_close()
             elif self.state == GVD._STATE_MEETPOINT_TWO_OBSTACLES:
@@ -94,7 +94,6 @@ class ControlNode():
                 F,next_state = self.GVD.meetpoint_three_obstacles()
             else:
                 F = (0.0,0.0,0.0); next_state = GVD._STATE_OBSTACLE_TOO_CLOSE
-            #
 
             self.F = F; self.state = next_state
             self.robot.pub_vel(self.F)

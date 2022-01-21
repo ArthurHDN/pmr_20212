@@ -16,12 +16,10 @@ window (
     show_follow 0
     show_footprints 1
     show_grid 1
-    show_status 1
     show_trailarrows 0
     show_trailrise 0
     show_trailfast 0
     show_occupancy 0
-    show_tree 0
     pcam_on 0
     screenshots 0
 )

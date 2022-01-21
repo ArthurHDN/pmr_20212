@@ -1,5 +1,5 @@
 from PotentialFields import *
-from math import atan2, atan, cos, sin, pi, sqrt
+from math import cos, sin, pi, sqrt
 from pmr_20212.AuxAlgebra import Inf
 import copy
 from operator import itemgetter
@@ -11,8 +11,8 @@ class GVD():
 
     _TOLERANCE = 0.1
     
-    def __init__(self, q_goal):
-        self.q_goal = q_goal
+    def __init__(self):
+        #self.q_goal = q_goal
         self.state = self._STATE_OBSTACLE_TOO_CLOSE
         self.meetpoints = []
         self.min_measurements = []
@@ -33,14 +33,14 @@ class GVD():
         self.sensor_max = sensor_max
         self.measurement = measurement
 
-####################################################################
+##################################
 
     def sort_sensor_data(self, measurements):
         aux_list = []
         t = len(measurements)
-        print(measurements)
+        #print(measurements)
 
-        for i in range(0, t):
+        for i in range(0, t-1):
             if (measurements[i][1] != Inf and measurements[i][1] != -Inf):
                 aux_list.append((abs(measurements[i][1]), i/2))
 
@@ -80,7 +80,7 @@ class GVD():
         aux_list = []
         t = len(not_sorted_sensor_data)
 
-        for i in range(0, t-1):
+        for i in range(0, t-2):
             #print(sorted_sensor_data[i])
             previous = not_sorted_sensor_data[i - 1][0]
             next = not_sorted_sensor_data[i + 1][0]
@@ -148,7 +148,7 @@ class GVD():
         return F
 
     def obstacle_too_close(self):
-        print(self._STATE_OBSTACLE_TOO_CLOSE)
+        #print(self._STATE_OBSTACLE_TOO_CLOSE)
         check_dist = 10
 
         sensor_data = self.measurement
@@ -176,14 +176,14 @@ class GVD():
                 next_state = self._STATE_OBSTACLE_TOO_CLOSE
 
         else:
-            print("No close obstacle!")
+            #print("No close obstacle!")
             F = (0, 0, 0)
             next_state = self._STATE_OBSTACLE_TOO_CLOSE
 
         return F, next_state
 
     def meetpoint_two_obstacles(self):
-        print(self._STATE_MEETPOINT_TWO_OBSTACLES)
+        #print(self._STATE_MEETPOINT_TWO_OBSTACLES)
         sensor_data = self.measurement
         sorted_sensor_data, not_sorted_sensor_data = self.sort_sensor_data(sensor_data)
 
@@ -250,7 +250,7 @@ class GVD():
         return F, next_state
 
     def meetpoint_three_obstacles(self):
-        print(self._STATE_MEETPOINT_THREE_OBSTACLES)
+        #print(self._STATE_MEETPOINT_THREE_OBSTACLES)
         for i in range(len(self.meetpoints)):
             d = sqrt((self.meetpoints[i][0]-self.robot_pose2D[0])**2 + (self.meetpoints[i][1]-self.robot_pose2D[1])**2)
             if d < 2.0:
