@@ -1,9 +1,0 @@
-<?xml version="1.0"?>
-
-<launch>
-
-<node pkg="stage_ros" name="stageros" type="stageros" output="screen" args="-d $(find pmr_20212)/worlds/TP2_task2.world" respawn="true"></node>
-
-<node pkg="pmr_20212" name="controller" type="TP2_task2.py" output="screen" respawn="true"></node>
-
-</launch>

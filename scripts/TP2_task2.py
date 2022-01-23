@@ -21,7 +21,7 @@ class ControlNode():
         self.freq = float(freq)
         self.rate = rospy.Rate(self.freq)
         # Robot and curve
-        self.robot = DifferentialRobot('/base_pose_ground_truth','/cmd_vel')
+        self.robot = DifferentialRobot('/base_pose_ground_truth','/cmd_vel',size=0.4)
         self.target = lambda t, P : np.array( [P[0], P[1], 0.0] )
         # Rviz markers
         self.robot_pose_marker = RvizMarkerSender('/robot_pose_marker','point', color=[0.2,0.2,1,1])
@@ -139,6 +139,7 @@ class ControlNode():
 
 if __name__ == '__main__':
     try:
+        x = raw_input('press enter to start\n')
         x_goal = 0; y_goal = 0
         d = 2.; c = 1.0; p0 = 1.5; eta = 10.
         params = [float(param) for param in [x_goal, y_goal,d,c,p0,eta]]
