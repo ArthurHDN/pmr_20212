@@ -1,0 +1,63 @@
+interval_sim 100
+resolution 0.01
+
+window (
+    center [0 0]
+    size [600 600]
+    rotate [0.000 0.000]
+    scale 27.500
+
+    # GUI options
+    show_data 1
+    show_blocks 1
+    show_flags 1
+    show_clock 1
+    show_follow 1
+    show_footprints 1
+    show_grid 1
+    show_status 1
+    show_trailarrows 0
+    show_tree 1
+)
+
+model (
+    name "world"
+    bitmap "map_rrt.bmp"
+    size [100.000 100.000 0.700]
+    pose [0.000 0.000 0.000 0.000 ]
+
+    color "gray30"
+
+    boundary 0
+    ranger_return 1.000
+
+    gui_move 0
+)
+
+position (
+    name "robot"
+    color "blue"
+
+    drive "diff"
+    pose [0.0 0.0 0.0 0.0]
+    velocity [0.0 0.0 0.0 0.0]
+
+    size [0.500 0.500 0.500]
+
+    localization "odom"
+    odom_error [0.0 0.0 0.0 0.0]
+
+    model (
+        pose [0.200 0.000 0.000 0.000]
+        size [0.200 0.200 0.200]
+        color "blue"
+    )
+    ranger (
+        sensor (
+            samples 360
+            range [0.0 10.0]
+            fov 360.0
+        )
+    )
+)
+
