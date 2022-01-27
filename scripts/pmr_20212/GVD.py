@@ -9,7 +9,7 @@ class GVD():
     _STATE_MEETPOINT_TWO_OBSTACLES = 2
     _STATE_MEETPOINT_THREE_OBSTACLES = 3
 
-    _TOLERANCE = 0.1
+    _TOLERANCE = 0.5
     
     def __init__(self):
         #self.q_goal = q_goal
@@ -25,30 +25,42 @@ class GVD():
         self.d = params[2]; self.c = params[3]
         self.p0 = params[4]; self.eta = params[5]
 
-    def update_robot(self, q, b, robot_pose2D, robot_center, sensor_max, measurement):
+    def update_robot(self, q, b, robot_pose2D, robot_center, sensor_max, lidar_x, lidar_y, lidar_raw, l_min, l_max):
         self.q = q
         self.b = b
         self.robot_pose2D = robot_pose2D
         self.robot_center = robot_center
         self.sensor_max = sensor_max
-        self.measurement = measurement
+        self.lidar_x = lidar_x 
+        self.lidar_y = lidar_y 
+        self.lidar_raw = lidar_raw
+        self.l_min = l_min
+        self.l_max = l_max
 
 ##################################
 
-    def sort_sensor_data(self, measurements):
+    def sort_sensor_data(self):
         aux_list = []
-        t = len(measurements)
+        #t = len(measurements)
         #print(measurements)
+        count = 0
+        dist = []
+        angles = []
 
-        for i in range(0, t-1):
-            if (measurements[i][1] != Inf and measurements[i][1] != -Inf):
-                aux_list.append((abs(measurements[i][1]), i/2))
+        for i in self.lidar_raw:
+            aux_list.append((i, count))
+            count += 1
+        aux_list.sort()
 
-        sorted_sensor_data = sorted(aux_list, key=itemgetter(0))
+        #sorted_sensor_data = sorted(aux_list, key=itemgetter(0))
         #sorted_sensor_data = aux_list.sort()
         #print(sorted_sensor_data)
 
-        return sorted_sensor_data, aux_list
+        for j in aux_list[:40]:
+            dist.append(j[0])
+            angles.append(j[1])
+
+        return dist, angles
 
 
 
@@ -76,18 +88,15 @@ class GVD():
 
         return F
 
-    def get_min_measurements(self, not_sorted_sensor_data):
+    def get_min_measurements(self):
         aux_list = []
-        t = len(not_sorted_sensor_data)
+        #t = len(not_sorted_sensor_data)
 
-        for i in range(0, t-2):
-            #print(sorted_sensor_data[i])
-            previous = not_sorted_sensor_data[i - 1][0]
-            next = not_sorted_sensor_data[i + 1][0]
-            if(previous > not_sorted_sensor_data[i][0] and  next > not_sorted_sensor_data[i][0]):
-                if(not_sorted_sensor_data[i - 1][1] == (not_sorted_sensor_data[i][1] - 1) and not_sorted_sensor_data[i + 1][1] == (not_sorted_sensor_data[i][1] + 1)):
-                    aux_list.append(not_sorted_sensor_data[i])
-                    #print(aux_list)
+        lidar_raw = self.lidar_raw
+        for i in range(1, len(lidar_raw)-1):
+            if(self.l_min < lidar_raw[i] < self.l_max):
+                if(lidar_raw[i-1] > lidar_raw[i] and lidar_raw[i+1] > lidar_raw[i]):
+                    aux_list.append((lidar_raw[i], i))
 
         min = copy.deepcopy(aux_list)
         for i in aux_list:
@@ -107,7 +116,8 @@ class GVD():
         min.sort()
         return min
 
-    def navigate_in_GVD(self, first_angle, second_angle, reverse):
+    def navigate_in_GVD(self, first_angle, second_angle=0, reverse=False):
+        print('navigating')
         K = 2.0
 
         big = max(first_angle, second_angle)
@@ -151,16 +161,16 @@ class GVD():
         #print(self._STATE_OBSTACLE_TOO_CLOSE)
         check_dist = 10
 
-        sensor_data = self.measurement
+        #sensor_data = self.measurement
         #print(sensor_data)
-        sorted_sensor_data, not_sorted_sensor_data = self.sort_sensor_data(sensor_data)
+        distances, angles = self.sort_sensor_data()
         #print(sorted_sensor_data)
 
-        if(sorted_sensor_data != []):
-            min_dist_angle = sorted_sensor_data[0][1]
+        if(angles != []):
+            min_dist_angle = angles[0]
             F = self.move_away_from_obstacle(min_dist_angle)
 
-            self.min_measurements = self.get_min_measurements(not_sorted_sensor_data)
+            self.min_measurements = self.get_min_measurements()
             #print(self.min_measurements)
 
             if (len(self.min_measurements) > 1):
@@ -184,10 +194,10 @@ class GVD():
 
     def meetpoint_two_obstacles(self):
         #print(self._STATE_MEETPOINT_TWO_OBSTACLES)
-        sensor_data = self.measurement
-        sorted_sensor_data, not_sorted_sensor_data = self.sort_sensor_data(sensor_data)
+        #sensor_data = self.measurement
+        distances, angles = self.sort_sensor_data()
 
-        self.min_measurements = self.get_min_measurements(not_sorted_sensor_data)
+        self.min_measurements = self.get_min_measurements()
 
         F = (0.0, 0.0, 0.0)
         next_state = self._STATE_OBSTACLE_TOO_CLOSE
@@ -231,14 +241,14 @@ class GVD():
                     else:
                         self.meetpoints.append([self.robot_pose2D[0], self.robot_pose2D[1], 0])
 
-                    #self.aux_min_measurements = copy.deepcopy(self.min_measurements)
-                    #self.aux_min_measurements = sorted(self.aux_min_measurements, key = lambda kv:(kv[1], kv[0])) 
+                    self.aux_min_measurements = copy.deepcopy(self.min_measurements)
+                    self.aux_min_measurements = sorted(self.aux_min_measurements, key = lambda kv:(kv[1], kv[0])) 
                     next_state = self._STATE_MEETPOINT_THREE_OBSTACLES
                     #print('here1')
-                    F = self.navigate_in_GVD(self.min_measurements[0][0], self.min_measurements[1][0], self.reverse)
+                    #F = self.navigate_in_GVD(self.min_measurements[0][0], self.min_measurements[1][0], self.reverse)
                     
                 else:
-                    F = (0.0, 0.0, 0.0)
+                    F = self.navigate_in_GVD(self.min_measurements[0][0], self.min_measurements[1][0], self.reverse)
                     next_state = self._STATE_OBSTACLE_TOO_CLOSE
                     #print('here2')
 

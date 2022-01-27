@@ -31,7 +31,7 @@ class RRT():
         self.end_point = self.Node(goal[0], goal[1], 0.0)
         self.min_rand = -50
         self.max_rand = 50
-        self.step_size = 2.0
+        self.step_size = 10.0
         self.dt = dt
         self.max_iterations = max_iterations
         self.obstacle_list = obstacle_list
@@ -307,7 +307,7 @@ def main(goal_config):
                 plt.ylabel('Y (m)')
                 print(len(new_traj))
                 plt.axis([-65, 65, -65, 65])
-                plt.savefig('/workspaces/arthur_ws/src/pmr_20212/rrt_plot_2.png')
+                plt.savefig('/workspaces/arthur_ws/src/pmr_20212/rrt_plot_newStepSize.png')
 
                 for i in range(len(new_traj)):
                     D = 1000
