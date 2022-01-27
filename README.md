@@ -62,7 +62,34 @@ $ roslaunch pmr_20212 TP1_task4.launch
 <div style="text-align:center"><img src="https://github.com/ArthurHDN/pmr_20212/blob/medias/media/gif_wave_front.gif"/></div>
 
 ## TP2
-TBA
+### Tarefa 1: A*
+
+```bash
+$ roslaunch pmr_20212 TP2_task1.launch
+```
+<div style="text-align:center"><img src="https://github.com/ArthurHDN/pmr_20212/blob/medias/media/gif_a_star.gif"/></div>
+
+### Tarefa 2: Boustrophedon
+
+```bash
+$ roslaunch pmr_20212 TP2_task2.launch
+```
+<div style="text-align:center"><img src="https://github.com/ArthurHDN/pmr_20212/blob/medias/media/gif_bous.gif"/></div>
+
+### Tarefa 3: (Sensor-based) Incremental GVD
+
+```bash
+$ roslaunch pmr_20212 TP2_task3.launch
+```
+<div style="text-align:center"><img src="https://github.com/ArthurHDN/pmr_20212/blob/medias/media/gif_gvd.gif"/></div>
+
+### Tarefa 4: RRT
+
+```bash
+$ roslaunch pmr_20212 TP2_task4.launch
+```
+<div style="text-align:center"><img src="https://github.com/ArthurHDN/pmr_20212/blob/medias/media/gif_rrt.gif"/></div>
+
 ## TP Final Arthur
 TBA
 ## TP Final Álvaro
@@ -72,4 +99,6 @@ TBA
 - Spong, M. W., Hutchinson, S., & Vidyasagar, M. (2020). Robot modeling and control. Hoboken, NJ: John Wiley &
 Sons
 - [Arthur H. D. Nunes, The Turtles: o guia prático e introdutório de simulações em robótica com ROS](http://www.petee.cpdee.ufmg.br/minicursos_oficinas/#ros)
+- [Geeks for Geeks](https://www.geeksforgeeks.org)
+- [Python Robotics](https://pythonrobotics.readthedocs.io/en/latest/index.html)
 - [Como fazer um README bonitão](https://raullesteves.medium.com/github-como-fazer-um-readme-md-bonitão-c85c8f154f8)
