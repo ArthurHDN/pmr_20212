@@ -2,7 +2,9 @@
 import rospy
 from tf.transformations import euler_from_quaternion
 from nav_msgs.msg import Odometry
+from nav_msgs.msg import Path
 from geometry_msgs.msg import Twist
+from geometry_msgs.msg import PoseStamped
 from math import cos, sin, pi, sqrt
 from sensor_msgs.msg import LaserScan
 import numpy as np
@@ -14,12 +16,11 @@ class GVD:
     _STATE_OBSTACLE_TOO_CLOSE = 1
     _STATE_MEETPOINT_TWO_OBSTACLES = 2
     _STATE_MEETPOINT_THREE_OBSTACLES = 3
-
     _TOLERANCE = 0.5
 
     def __init__(self):
         self.d = 0.2
-        self.k = 1
+        self.k = 0.5
 
         self.incremental_GVD_pos = [0, 0]
         self.incremental_GVD_vel = [0, 0]
@@ -31,12 +32,13 @@ class GVD:
         self.l_max = 0
         self.l_min = 0
         self.cmd_vel_msg = Twist()
+        self.path = Path()
 
         rospy.init_node("GVD", anonymous=True)
         rospy.Subscriber('/base_pose_ground_truth', Odometry, self.callback_incremental_GVD_odom)
         rospy.Subscriber('/base_scan', LaserScan, self.callback_sensor)
         self.pub_cmd_vel = rospy.Publisher("/cmd_vel", Twist, queue_size=1)
-
+        self.publisher_robot_path = rospy.Publisher('/robot_path', Path, queue_size=1)
 
     def callback_incremental_GVD_odom(self,data):
         self.incremental_GVD_pos[0] = data.pose.pose.position.x
@@ -50,7 +52,6 @@ class GVD:
 
         self.orientation = euler[2]
 
-
     def callback_sensor(self, data):
         self.lidar_data  = data.ranges
         self.l_max = data.range_max
@@ -61,7 +62,6 @@ class GVD:
             sy = (sin(self.orientation)*(self.lidar_data[alfa]*cos(np.deg2rad(alfa-180))) + cos(self.orientation)*(self.lidar_data[alfa]*sin(np.deg2rad(alfa-180)))) +self.incremental_GVD_pos[1]
             self.lidar_x[alfa]= sx
             self.lidar_y[alfa] = sy 
-
 
     def get_min_measurements(self):
         min_measurements = []
@@ -90,11 +90,9 @@ class GVD:
         # print(aux_list, "|", min_measurements)
         return aux_list
 
-
     def compute_distance(self, px1, py1, px2, py2):
         d = sqrt((px1-px2)**2 + (py1-py2)**2)
         return d
-
 
     def sort_sensor_data(self):
         s = []
@@ -115,9 +113,8 @@ class GVD:
 
         return s, alfa
     
-
     def navigate_in_GVD(self, alfa1, alfa2=0, reverse=False):
-        K = 2.0
+        K = 1.0
         pos = []
         maior = max(alfa1, alfa2)
         menor = min(alfa1, alfa2)
@@ -158,9 +155,8 @@ class GVD:
             self.cmd_vel_msg.linear.x = -self.cmd_vel_msg.linear.x
         self.pub_cmd_vel.publish(self.cmd_vel_msg)
 
-
     def move_away_from_obstacle(self, alfa1):
-        K = 2.0
+        K = 1.0
         pos = []
 
         pos.append(self.lidar_x[alfa1])
@@ -182,12 +178,22 @@ class GVD:
         self.cmd_vel_msg.linear.x, self.cmd_vel_msg.angular.z = self.feedback_linearization(Ux,Uy,self.orientation)
         self.pub_cmd_vel.publish(self.cmd_vel_msg)
 
-
     def feedback_linearization(self,Ux, Uy, theta_n):
         vx = cos(theta_n) * Ux + sin(theta_n) * Uy
         w = -(sin(theta_n) * Ux)/ self.d  + (cos(theta_n) * Uy) / self.d 
 
         return vx, w
+
+    def publish_path(self):
+        if (self.incremental_GVD_pos[0]**2 + self.incremental_GVD_pos[1]**2) < 1:
+            return
+        self.path.header.frame_id = '/world'
+        self.path.header.stamp = rospy.Time.now()
+        pose_msg = PoseStamped()
+        pose_msg.pose.position.x = self.incremental_GVD_pos[0]
+        pose_msg.pose.position.y = self.incremental_GVD_pos[1]
+        self.path.poses.append(pose_msg)
+        self.publisher_robot_path.publish(self.path)
 
 
 def explore():
@@ -202,6 +208,8 @@ def explore():
 
     while not rospy.is_shutdown():
 
+        # print('state = ' + str(state))
+
         if(state == 0):
             if(incremental_GVD.lidar_data):
                 state = incremental_GVD._STATE_OBSTACLE_TOO_CLOSE
@@ -215,9 +223,9 @@ def explore():
 
             local_min = incremental_GVD.get_min_measurements()
             local_min.sort()
-
+            # print('local_min = ' + str(local_min))
             if (len(local_min) > 1):
-                if (abs(local_min[0][0] - local_min[1][0]) < 0.50):
+                if (abs(local_min[0][0] - local_min[1][0]) < 0.80):
                     state = incremental_GVD._STATE_MEETPOINT_TWO_OBSTACLES
         
         if (state == incremental_GVD._STATE_MEETPOINT_TWO_OBSTACLES):
@@ -256,7 +264,7 @@ def explore():
                         if meetpoints != []:
                             for i in range(len(meetpoints)):
                                 d = incremental_GVD.compute_distance(meetpoints[i][0], meetpoints[i][1],incremental_GVD.incremental_GVD_pos[0], incremental_GVD.incremental_GVD_pos[1])
-                                if d < 2.0:
+                                if d < 1.0:
                                     meetpoints[i][2] += 1
                                     visited_point = True
                                 
@@ -271,7 +279,7 @@ def explore():
                         state = incremental_GVD._STATE_MEETPOINT_THREE_OBSTACLES
                 
                 incremental_GVD.navigate_in_GVD(local_min[0][1], local_min[1][1], reverse)
-                if (abs(local_min[0][0] - local_min[1][0]) > 0.50):
+                if (abs(local_min[0][0] - local_min[1][0]) > 1.0):
                     state = incremental_GVD._STATE_OBSTACLE_TOO_CLOSE
             else:
                 incremental_GVD.navigate_in_GVD(local_min[0][1], reverse)
@@ -280,7 +288,7 @@ def explore():
 
             for i in range(len(meetpoints)):
                 d = incremental_GVD.compute_distance(meetpoints[i][0], meetpoints[i][1], incremental_GVD.incremental_GVD_pos[0], incremental_GVD.incremental_GVD_pos[1])
-                if d < 2.0:
+                if d < 1.0:
                     visited = meetpoints[i][2]
 
             if (visited % 2 == 0):
@@ -288,6 +296,8 @@ def explore():
             else:
                 incremental_GVD.navigate_in_GVD(aux[1][1], aux[2][1], reverse) 
             state = incremental_GVD._STATE_MEETPOINT_TWO_OBSTACLES
+
+        incremental_GVD.publish_path()
 
         rate.sleep()
 

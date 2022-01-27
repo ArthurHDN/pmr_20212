@@ -8,19 +8,19 @@ define robot_block model
 define topurg ranger
 (
 	sensor( 			
-    range [ 0.0  10.0 ]
+    range [ 0.01  10.0 ]
     fov 360
    samples 360
   )
 
   # generic model properties
   color "black"
-  size [ 0.600 0.600 0.600 ]
+  size [ 0.100 0.100 0.100 ]
 )
 
 define erratic position
 (
-  size [0.800 0.800 0.800]
+  size [0.500 0.500 0.400]
   origin [0.000 0.000 0.000 0.000]
   gui_nose 1
   drive "diff"
@@ -81,7 +81,7 @@ floorplan
 ( 
   name "my_map"
   bitmap "map_gvd.png"
-  size [50.000 50.000 1.000]
+  size [60.000 60.000 1.000]
   pose [ 0.000 0.000 0.000 0.000 ] #[x y ? theta]
 )
 
