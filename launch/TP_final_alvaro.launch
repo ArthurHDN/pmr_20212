@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<launch>
+    <param name="use_sim_time" value="true"/>
+
+    <node pkg="stage_ros" type="stageros" name="stageros" args="-d $(find pmr_20212)/worlds/TP4_task4.world"/>
+
+    <node pkg="pmr_20212" type="TP_final.py" name="RRT_star_planner" output="screen"/>
+    
+</launch>
+ 
